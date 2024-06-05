@@ -33,7 +33,7 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 #ifndef H4_H
 #define H4_H
 
-#define H4_VERSION  "4.0.3"
+#define H4_VERSION  "4.0.4"
 
 #define H4_USERLOOP       0 // improves performance
 #define H4_COUNT_LOOPS    0 // DIAGNOSTICS
@@ -69,7 +69,11 @@ enum {
 
 #include <Arduino.h>
 
-#define h4rebootCore ESP.restart 
+#ifdef ARDUINO_ARCH_RP2040
+#define h4rebootCore rp2040.restart
+#else
+#define h4rebootCore ESP.restart
+#endif
 #define H4_BOARD ARDUINO_BOARD
 
 void h4reboot();
