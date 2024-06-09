@@ -139,7 +139,7 @@ uint64_t millis64(){
 
 	if (lastSample > sample)
 	{
-		overflow += kOverflowIncrement;
+		overflow = overflow + kOverflowIncrement;
 	}
 
 	lastSample     = sample;
