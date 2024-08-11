@@ -48,7 +48,6 @@ void __attribute__((weak)) h4UserLoop(){}
 void __attribute__((weak)) onReboot(){}
 
 H4_TIMER 		    H4::context=nullptr;
-std::unordered_map<uint32_t,uint32_t> H4::unloadables;
 
 H4_TIMER_MAP	    task::singles={};
 void h4reboot(){ h4rebootCore(); }
