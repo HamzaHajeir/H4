@@ -33,7 +33,7 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 #ifndef H4_H
 #define H4_H
 
-#define H4_VERSION  "4.0.6"
+#define H4_VERSION  "4.0.7"
 
 #define H4_USERLOOP       0 // improves performance
 #define H4_COUNT_LOOPS    0 // DIAGNOSTICS
@@ -125,7 +125,6 @@ class H4Random: public H4Countdown {
 //
 class task{
 			bool  		    harakiri=false;
-	static	H4_TIMER_MAP    singles;
 
 		    void            _chain();
 		    void            _destruct();
@@ -184,6 +183,7 @@ extern void h4StartPlugins();
 
 class H4: public std::priority_queue<task*, std::vector<task*>, task>{ // H4P 35500 - 35700
 	friend class task;
+	            H4_TIMER_MAP    singles;
                 std::vector<H4_FN_VOID> loopChain;
     public:       
                 std::unordered_map<uint32_t,uint32_t> unloadables;

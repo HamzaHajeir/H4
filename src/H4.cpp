@@ -49,7 +49,6 @@ void __attribute__((weak)) onReboot(){}
 
 H4_TIMER 		    H4::context=nullptr;
 
-H4_TIMER_MAP	    task::singles={};
 void h4reboot(){ h4rebootCore(); }
 
 H4Random::H4Random(uint32_t rmin,uint32_t rmax){ count=task::randomRange(rmin,rmax); }
@@ -169,8 +168,8 @@ task::task(
 {
 	if(_s){
 		uint32_t id=_u%100;
-		if(singles.count(id)) singles[id]->endK();    
-		singles[id]=this;
+		if(h4.singles.count(id)) h4.singles[id]->endK();    
+		h4.singles[id]=this;
 	}
 	schedule();
 }
@@ -197,12 +196,12 @@ void task::operator()(){
 
 void task::_chain(){ if(chain) h4.add(chain,0,0,H4Countdown(1),nullptr,uid); } // prevents tag rescaling during the pass
 
-void task::cancelSingleton(uint32_t s){ if(singles.count(s)) singles[s]->endK(); }
+void task::cancelSingleton(uint32_t s){ if(h4.singles.count(s)) h4.singles[s]->endK(); }
 
 uint32_t task::cleardown(uint32_t pass){
 	if(singleton){
 		uint32_t id=uid%100;
-		singles.erase(id);
+		h4.singles.erase(id);
 	}
 	return pass;
 }
