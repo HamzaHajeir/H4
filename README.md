@@ -25,9 +25,9 @@ R.I.P Phil :\ :
 
 ---
 
-H4 is a simple way of doing multiple things / "tasks" / "processes" at the same time on ESP8266 and ESP32. It is the base of any IOT app you want to build if the app needs to to do more than one thing at a time - which most do!
+H4 is a simple way of doing multiple things / "tasks" / "processes" at the same time on ESP8266, ESP32, and RP2040. It is the base of any IOT app you want to build if the app needs to to do more than one thing at a time - which most do!
 
-Technically-speaking, it is a "Functional scheduler" in the form of an ArduinoIDE library providing timers for ESP8266 / ESP32 which can call:
+Technically-speaking, it is a "Functional scheduler" in the form of an ArduinoIDE library providing timers for ESP8266 / ESP32 / RP2040 which can call:
 
 * Normal functions
 * Class functions
@@ -338,16 +338,16 @@ bool finishIf(H4_TASK_PTR t, H4_FN_TIF f);
 ## Installation
 ### Prerequisites
 
-The library has been tested using the following firmware. Please do not even *think* about raising anhy issues unless you have the following correctly installed.
+The library has been tested using the following firmware. Please do not even *think* about raising any issues unless you have the following correctly installed.
 
-* [ESP8266 core 3.0.2](https://github.com/esp8266/Arduino)
-* [ESP32 core 2.0.0](https://github.com/espressif/arduino-esp32)
-* [ArduinoIDE 1.8.16](https://www.arduino.cc/en/software)
+* [ESP8266 core 3.1.2](https://github.com/esp8266/Arduino)
+* [ESP32 core 3.0.4](https://github.com/espressif/arduino-esp32)
+* [RP2040 core 3.9.5](https://github.com/earlephilhower/arduino-pico)
+* [ArduinoIDE 2.3.2](https://www.arduino.cc/en/software)
 
-***N.B.***
+### PlatformIO
 
-Note that PlatformIO is not in the above list. Many folk *do* use it, but you will need to create your own installation configuration.
-I am currently in discussions to add a PIO install to the standard [H4 Installer](https://github.com/philbowles/h4installer). If you are able to help / contribute to this, please get in touch!
+One can get a homogeneous H4 Stack versions from the [PlatformIO H4Plugins Environment](https://github.com/hamzahajeir/h4plugins_env). One can reuse the environment directly, or copy the parts of interest in the configuration file `platformio.ini` in a new project.
 
 ### Arduino IDE
 
