@@ -124,7 +124,6 @@ void H4::dumpQ(){}
 uint64_t millis64(){
 	static volatile uint64_t overflow        = 0;
 	static volatile uint32_t lastSample         = 0;
-	static volatile uint8_t lock             = 0;
 	static const uint64_t kOverflowIncrement = static_cast<uint64_t>(0x100000000);
 
 	uint64_t overflowSample;
@@ -427,7 +426,7 @@ void H4::loop(){
 //        dumpQ();
 	};
 //
-	for(auto const f:loopChain) f();
+	for(auto const &f:loopChain) f();
 #if H4_USERLOOP
 	h4UserLoop();
 #endif
