@@ -165,6 +165,9 @@ task::task(
   uid{_u},
   singleton{_s}
 {
+	static uint64_t count=0;
+	count++;
+	id=count;
 	if(_s){
 		uint32_t id=_u%100;
 		if(h4.singles.count(id)) h4.singles[id]->endK();    
@@ -173,7 +176,7 @@ task::task(
 	schedule();
 }
 
-bool task::operator() (const task* lhs, const task* rhs) const { return (lhs->at>rhs->at); }
+bool task::operator() (const task* lhs, const task* rhs) const { return ((lhs->at>rhs->at) || (lhs->at==rhs->at && lhs->id>rhs->id)) ? true : false; }
 
 void task::operator()(){
 	if(harakiri) _destruct(); // for clean exits
@@ -409,7 +412,11 @@ void H4::setup(){
 
 void H4::loop(){
 	task* t=nullptr;
+#if USE_MILLIS_64
+	uint64_t now = millis64();
+#else
 	uint32_t now=(uint32_t) millis(); // can't do inside loop...clocks dont work when HAL_disableInterrupts()!!!
+#endif
 	HAL_disableInterrupts();
 	if(size()){
 		if(((int64_t)(top()->at - now)) < 1) {

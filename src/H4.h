@@ -130,7 +130,7 @@ class task{
 		    void            _destruct();
 
 	public:
-
+            uint64_t        id;
             H4_FN_VOID     	f;
             uint32_t        rmin=0;
             uint32_t        rmax=0;
