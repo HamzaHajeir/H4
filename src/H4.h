@@ -33,7 +33,7 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 #ifndef H4_H
 #define H4_H
 
-#define H4_VERSION  "4.0.8"
+#define H4_VERSION  "4.0.9"
 
 #ifndef H4_USERLOOP
 #define H4_USERLOOP       0 // improves performance
