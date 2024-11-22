@@ -35,7 +35,9 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 
 #define H4_VERSION  "4.0.8"
 
+#ifndef H4_USERLOOP
 #define H4_USERLOOP       0 // improves performance
+#endif
 #define H4_COUNT_LOOPS    0 // DIAGNOSTICS
 #define H4_HOOK_TASKS     0
 
