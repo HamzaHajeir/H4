@@ -31,6 +31,10 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 */
 #include <H4.h>
 
+#if !H4_COROUTINE_SUPPORTED
+#pragma message "C++ Compiler does not support Coroutines"
+#endif
+
 #ifdef ARDUINO_ARCH_ESP32
 	portMUX_TYPE h4_mutex = portMUX_INITIALIZER_UNLOCKED;
 	void HAL_enableInterrupts(){ portEXIT_CRITICAL(&h4_mutex); }
@@ -48,6 +52,11 @@ void __attribute__((weak)) h4UserLoop(){}
 void __attribute__((weak)) onReboot(){}
 
 H4_TIMER 		    H4::context=nullptr;
+H4_TASK_PTR& H4_context = H4::context;
+
+#if H4_COROUTINE_SUPPORTED
+std::map<task*, std::coroutine_handle<H4Delay::promise_type>> H4::suspendedTasks;
+#endif
 
 void h4reboot(){ h4rebootCore(); }
 
@@ -121,6 +130,53 @@ void H4::dumpQ(){
 void H4::dumpQ(){}
 #endif
 
+#if H4_COROUTINE_SUPPORTED
+bool H4Delay::promise_type::final_awaiter::await_suspend(std::coroutine_handle<promise_type> h) noexcept {
+	auto owner = h.promise().owner;
+	if (owner) {
+		H4::suspendedTasks.erase(owner);
+		owner->_destruct();
+		owner = nullptr;
+	}
+		// [ ] IF NOT IMMEDIATEREQUEUE: MANAGE REQUEUE AND CHAIN CALLS.
+	return false;
+}
+H4Delay::promise_type::final_awaiter H4Delay::promise_type::final_suspend() noexcept { return {}; }
+
+bool H4Delay::await_ready() noexcept { return false; }
+
+void H4Delay::await_suspend(const std::coroutine_handle<promise_type> h) noexcept {
+    // Schedule the resumer.
+    _coro = h;
+    h.promise().owner = owner;
+    h.promise().resumer = h4.once(duration, [this]{ _coro.resume(); });;
+    H4::suspendedTasks[owner] = _coro;
+}
+
+void H4Delay::await_resume() noexcept {
+    _coro.promise().resumer = nullptr;
+}
+
+
+void H4Delay::promise_type::cancel() {
+    auto _coro = std::coroutine_handle<H4Delay::promise_type>::from_promise(*this);
+    // printf("_coro=%p\n", _coro);
+    if (_coro) {
+        // _coro.promise().owner = nullptr;
+        _coro.destroy();
+    }
+    if (resumer) {
+        h4.cancel(resumer);
+        resumer = nullptr;
+    }
+    // printf("owner=%p\n", owner);
+    if (owner) {
+        H4::suspendedTasks.erase(owner);
+        owner = nullptr;
+    }
+}
+#endif
+
 uint64_t millis64(){
 	static volatile uint64_t overflow        = 0;
 	static volatile uint32_t lastSample         = 0;
@@ -182,6 +238,10 @@ void task::operator()(){
 	if(harakiri) _destruct(); // for clean exits
 	else {
 		f();
+#if H4_COROUTINE_SUPPORTED
+        bool thisis_suspended = H4::suspendedTasks.count(this);
+		// CURRENTLY: THIS ONLY PREVENTS DESTRUCTION AT THIS POINT, IN FUTURE: RELAY REQUEUE & CHAIN ..
+#endif
 		if(reaper){ // it's finite
 			if(!(reaper())){ // ...and it just ended
 				_chain(); // run chain function if there is one
@@ -190,7 +250,11 @@ void task::operator()(){
 					rmax=0;
 					reaper=nullptr; // and every day after
 					requeue();
+#if H4_COROUTINE_SUPPORTED
+				} else if (!thisis_suspended) _destruct();
+#else
 				} else _destruct();
+#endif
 			} else requeue();
 		} else requeue();
 	}
@@ -238,6 +302,13 @@ uint32_t task::endC(H4_FN_TIF f){
 
 uint32_t task::endK(){
 //    H4_Pirntf("ENDK %p\n",this);
+#if H4_COROUTINE_SUPPORTED
+    auto it = std::find_if(H4::suspendedTasks.begin(), H4::suspendedTasks.end(), [this](const std::pair<task*,std::coroutine_handle<H4Delay::promise_type>> p) { return p.first == this; });
+    bool thisiscoro = it!=H4::suspendedTasks.end();
+    if (thisiscoro) {
+        it->second.promise().cancel();
+    }
+#endif
 	harakiri=true;
 	return cleardown(at=0);
 }
@@ -277,7 +348,11 @@ uint32_t H4::gpFramed(task* t,H4_FN_RTPTR f){
 	uint32_t rv=0;
 	if(t){
 		HAL_disableInterrupts();
+#if H4_COROUTINE_SUPPORTED
+    	if(has(t) || (t==H4::context) || H4::suspendedTasks.count(t)) rv=f(); // fix bug where context = 0!
+#else
 		if(has(t) || (t==H4::context)) rv=f(); // fix bug where context = 0!
+#endif
 		HAL_enableInterrupts();
 	}
 	return rv;
@@ -429,6 +504,7 @@ void H4::loop(){
 		H4::context=t;
 //        H4_Pirntf("T=%u H4context <-- %p\n",millis(),t);
 		(*t)();
+        H4::context=nullptr;
 //        H4_Pirntf("T=%u H4context --> %p\n",millis(),t);
 //        dumpQ();
 	};

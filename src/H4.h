@@ -60,6 +60,13 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 
 #define USE_MILLIS_64   1
 
+#if __cplusplus >= 201902L
+#define H4_COROUTINE_SUPPORTED 1
+// Demo tests: https://godbolt.org/z/exv7YExo6
+#else
+#define H4_COROUTINE_SUPPORTED 0
+#endif
+
 enum {
     H4_CHUNKER_ID=90,
     H4AT_SCAVENGER_ID,
@@ -70,6 +77,19 @@ enum {
 }; // must not grow past 99!
 
 #include <Arduino.h>
+
+#include<algorithm>
+#if H4_COROUTINE_SUPPORTED
+#include <coroutine>
+#endif
+#include<cstdint>
+#include<cstring>
+#include<functional>
+#include<map>
+#include<queue>
+#include<string>
+#include<unordered_map>
+#include<vector>
 
 #ifdef ARDUINO_ARCH_RP2040
 #define h4rebootCore rp2040.restart
@@ -85,16 +105,14 @@ void HAL_disableInterrupts();
 
 uint64_t millis64();
 
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include<queue>
-#include<algorithm>
-#include<functional>
 
 class   task;
 using	H4_TASK_PTR		=task*;
 using	H4_TIMER		=H4_TASK_PTR;
+
+#if H4_COROUTINE_SUPPORTED
+class H4Delay;
+#endif
 
 using	H4_FN_COUNT		=std::function<uint32_t(void)>;
 using	H4_FN_TASK		=std::function<void(H4_TASK_PTR,uint32_t)>;
@@ -111,6 +129,8 @@ using 	H4_TIMER_MAP	=std::unordered_map<uint32_t,H4_TIMER>;
 #define MY(x) H4::context->x
 #define TAG(x) (u+((x)*100))
 
+extern H4_TASK_PTR& H4_context;
+
 class H4Countdown {
 	public:
 		uint32_t 	count;
@@ -122,6 +142,7 @@ class H4Random: public H4Countdown {
   public:
         H4Random(uint32_t tmin=0,uint32_t tmax=0);
 };
+
 //
 //		T A S K
 //
@@ -130,6 +151,10 @@ class task{
 
 		    void            _chain();
 		    void            _destruct();
+
+#if H4_COROUTINE_SUPPORTED
+            friend class H4Delay;      
+#endif
 
 	public:
             uint64_t        id;
@@ -178,6 +203,51 @@ class task{
 				void 		schedule();
 		static 	uint32_t	randomRange(uint32_t lo,uint32_t hi); // move to h4
 };
+
+//
+//      H 4 D e l a y
+//
+
+#if H4_COROUTINE_SUPPORTED
+class H4Delay {
+    // task* owner;
+    uint32_t duration;
+    task* owner=nullptr;
+public: 
+    class promise_type {
+        // uint32_t duration;
+        task* owner=nullptr;
+        task* resumer=nullptr;
+        friend class H4Delay;
+        public:
+        H4Delay get_return_object() noexcept { return H4Delay(std::coroutine_handle<promise_type>::from_promise(*this)); }
+        std::suspend_never initial_suspend() noexcept { return {}; }
+        void return_void() noexcept {}
+        void unhandled_exception() noexcept {}
+        struct final_awaiter {
+            bool await_ready() noexcept { return false; }
+            bool await_suspend(std::coroutine_handle<promise_type> h) noexcept;
+            void await_resume() noexcept { }
+        };
+        final_awaiter final_suspend() noexcept;
+        
+        void cancel();
+    };
+    std::coroutine_handle<promise_type> _coro;
+    
+    explicit H4Delay(uint32_t duration, task* caller=H4_context) : duration(duration), owner(caller) {
+        // debugFunction(__PRETTY_FUNCTION__); printf("this=%p\n", this); 
+        // printf("_coro=%p\tduration=%u\towner=%p\tresumer=%p\n", _coro,duration,owner,resumer);
+    }
+    explicit H4Delay(std::coroutine_handle<promise_type> h) : _coro(h) { }
+    ~H4Delay() { }
+
+    bool await_ready() noexcept;
+    void await_suspend(const std::coroutine_handle<promise_type> h) noexcept;
+    void await_resume() noexcept;    
+};
+#endif
+
 //
 //      H 4
 //
@@ -190,6 +260,10 @@ class H4: public std::priority_queue<task*, std::vector<task*>, task>{ // H4P 35
     public:       
                 std::unordered_map<uint32_t,uint32_t> unloadables;
 	    static  H4_TASK_PTR		context;
+#if H4_COROUTINE_SUPPORTED
+        static  std::map<task*, std::coroutine_handle<H4Delay::promise_type>> suspendedTasks;
+#endif
+
 
 	    	    void 		    loop();
                 void            setup();

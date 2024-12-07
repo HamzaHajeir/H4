@@ -203,6 +203,57 @@ void h4setup(){ // do the same type of thing as the standard setup
 
 Voila: Three different LEDs, all running at different speeds at the same time Now think what "normal" code you would have to write to do that. Now do it with 5 LEDs...using H4 it's trivial. The "usual" way is a lot longer, a lot harder, more error-prone and looks awful.
 
+
+### Coroutines Support
+C++ provides a method to add concurrency support to the functions, to be suspended, and resumed in other times, therefore enables the user to write asynchronous code by synchronous-like coding.
+
+H4 Supports coroutines in a way to enable writing simpler asynchronous codes, yet to enable switching synchronous codes to asynchronous using H4 easily.
+
+***Requires C++20 support.***
+
+```cpp
+H4Delay blinkLED() {
+	while(1) {
+		digitalWrite(LED_BUILTIN, HIGH);
+		co_await H4Delay(1000); // Non-blocking delay
+		digitalWrite(LED_BUILTIN, LOW);
+		co_await H4Delay(1000);
+	}
+}
+
+void h4setup() {
+    blinkLED();
+}
+```
+
+#### Key points in using Coroutines:
+
+
+- The function signature should return `H4Delay` type instead of `void`.
+- `co_await H4Delay({$Time});` expression where the task should suspend for `${TIME}` period.
+    - `co_await H4Delay(0)` does queue the continuation to the next loop iteration.
+
+- Finishing the timer can be done by `h4.cancel(${task})`, `h4.FinishNow()`, or `h4.FinishIf(${task})`. Where they all destroy the coroutine handle.
+- `FinishNow`/`FinishIf` would call the chain function, `cancel` does not.
+- `FinishEarly` would not act directly on the running coroutine, it will just reschedule the function/coroutine function to be called immediately and once.
+- The chain or requeue of the coroutine gets called **immediately**, (Not postponed after the coroutine function itself finishes), therefore if repeating timer (as `h4.nTimes()`) calls the callback function, it'd be rescheduled immediately. Also the chain would be scheduled just after calling the last function even if it's a coroutine. 
+- Primary tests shows that a coroutine function can be called immediately (No need to schedule it in by H4 APIs), But this method requires to add a second argument in `co_await`: `co_await H4Delay(${TIME}, nullptr)`. To prevent the library cancelling the last registered `H4::context` if it is called by any H4 context.
+    This method lacks the methods of cancelling by H4 APIs (h4.cancel/FinishNow/FinishIf).
+    Alternatively one can register the coroutine handle of the returning H4Delay object and call `cancel()` method of the `promise()` object on desired time **beofre it gets finished**. as follows: 
+```cpp
+H4Delay f(){ some_instructions; co_await H4Delay(${TIME}, nullptr); some_instructions; }
+
+{
+    auto h4delay = f(); // Calling your H4 coroutine function
+    auto coro_handle = h4delay._coro;
+    
+    // At anytime before it finishes (Goes out of scope by reaching the end of it or co_return being called at any point):
+    coro_handle.promise().cancel(); // destroys the coroutine handle, and the H4 resume timer.
+}
+```
+
+[Example Code](examples\coroutines\coroutines.ino)
+
 ---
 
 ## API
