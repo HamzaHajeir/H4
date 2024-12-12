@@ -207,6 +207,11 @@ Voila: Three different LEDs, all running at different speeds at the same time No
 ### Coroutines Support
 C++ provides a method to add concurrency support to the functions, to be suspended, and resumed in other times, therefore enables the user to write asynchronous code by synchronous-like coding.
 
+The C++ Coroutine function saves the state of all local variables and data, and destruct them when appropriate to do.
+
+For raw pointers, the use should appropriately manage the lifetime of such data, and beware by the data isn't freed between the coroutine suspension and resumption, and if that data was provided by a 3rd-party library, he should make sure to either it does not free, or to make a managed copy of it.
+
+
 H4 Supports coroutines in a way to enable writing simpler asynchronous codes, yet to enable switching synchronous codes to asynchronous using H4 easily.
 
 ***Requires C++20 support.***
@@ -253,6 +258,35 @@ H4Delay f(){ some_instructions; co_await H4Delay(${TIME}, nullptr); some_instruc
 ```
 
 [Example Code](examples\coroutines\coroutines.ino)
+
+
+#### Coroutines vs RTOS:
+
+One can write RTOS-like code using H4 coroutines, just as the blinky example just provided earlier, with the following technical differences:
+1. RTOS switches context by saving registers data and replace with other task's ones at interrupt times, which is more accurate in timing. While H4 does run the infinite loop and awaits the task's due to meet, then call the function and waits it to finish completely, therefore if some long operation is balled by H4, it will block executing other possible tasks, which is why at essence it's almost forbidden to use `delay()` APIs. 
+However such long procedures could be unavoidable, and if any is faced, that might cause time drifts, even in milliseconds or tens of or hundreds of, based primarily on the long operations.  
+Ofcourse most applications might tolerate such time drifts, or even do perform forward correction by something like: 
+```cpp
+H4Delay blinkLED() {
+	while(1) {
+		digitalWrite(LED_BUILTIN, HIGH);
+		co_await H4Delay(1000 - millis() % 1000); // Schedule to the nearest 1000-multiple.
+		digitalWrite(LED_BUILTIN, LOW);
+		co_await H4Delay(1000 - millis() % 1000);
+	}
+}
+
+```
+
+2. The H4 coroutine does not require a special registration of functions, nor to deregister, therefore it's simpler to use.
+
+3. When tasks clashes in RTOS, it manages them by the priority given to each one.
+
+4. RTOS gives tasks execution in splitted time frames, something like 1ms each, and it might context switch if a task delay is encountered, which is a good behaviour. Anyway sometimes interrupt in the middle of execution, which might have some behaviours such as UART mixed printings across different tasks.
+
+5. Some RTOS's support running tasks on mutliple cores, while H4 does not, but it might be possible to run two instance of H4, each independent of the other (if we supported that).
+
+
 
 ---
 
