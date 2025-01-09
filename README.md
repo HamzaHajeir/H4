@@ -286,6 +286,7 @@ H4Delay blinkLED() {
 
 5. Some RTOS's support running tasks on mutliple cores, while H4 does not, but it might be possible to run two instance of H4, each independent of the other (if we supported that).
 
+6. Utilizing H4 coroutines does not require the system to run over a specific RTOS, therefore H4 coroutines option provides better portability of your project wherever H4 supports.
 
 
 ---
