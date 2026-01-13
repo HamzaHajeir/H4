@@ -45,7 +45,7 @@ For example, other rights such as publicity, privacy, or moral rights may limit 
 void __attribute__((weak)) h4setup(){}
 void __attribute__((weak)) h4StartPlugins(){}
 void __attribute__((weak)) h4UserLoop(){}
-void __attribute__((weak)) onReboot(){}
+void __attribute__((weak)) onReboot(){} // NOT BEING INVOKED HERE!
 
 H4_TIMER 		    H4::context=nullptr;
 
