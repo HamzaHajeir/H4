@@ -2,12 +2,6 @@
 
 ---
 
-Licence: ![licence](https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png) Creative Commons: Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) [Legal Text](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode)
-
-# ***N.B. This licence expressly prohibits commercial use***
-
----
-
 ## Version 4.0.9 06/03/2023
 
 Full support of RP2040.
@@ -26,8 +20,7 @@ License changed to Creative Commons: Attribution-NonCommercial-ShareAlike 4.0 In
 
 ---
 
-R.I.P Phil :\ :
-## If you are able, please [Support me on Patreon](https://patreon.com/esparto) or [PayPal](https://www.paypal.com/paypalme/h4plugins) and/or subscribe to my [Youtube channel (instructional videos)](https://www.youtube.com/channel/UCYi-Ko76_3p9hBUtleZRY6g)
+## Keep Philbowles remembered by viewing and sharing his [Youtube channel (instructional videos)](https://www.youtube.com/channel/UCYi-Ko76_3p9hBUtleZRY6g)
 
 ---
 
@@ -546,3 +539,6 @@ void*           partial=NULL; // ptr -> Your partial results
 * [Facebook ESP8266 Programming Questions](https://www.facebook.com/groups/esp8266questions/)
 * [Facebook ESP Developers (moderator)](https://www.facebook.com/groups/ESP8266/)
 * [Support me on Patreon](https://patreon.com/esparto)
+
+## Licence: MIT License
+For more information, read out the [License change statement](Statement.md), which covers our awared and responsible decision.
